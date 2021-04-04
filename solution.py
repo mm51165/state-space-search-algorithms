@@ -1,6 +1,5 @@
 import collections
 import sys
-import os
 
 
 class Node:
@@ -33,6 +32,7 @@ def bfs(s0, succ, goal):
     all = []
 
     while open:
+        print(len(open))
         n = open.pop(0)
         visited.append(n)
         for ret in goal:
@@ -73,17 +73,24 @@ def ucs(s0, succ, goal):
 def astar(s0, succ, goal, h):
     open = []
     node = Node(s0, 0, None, [s0])
-    closed = []
+    open.append(node)
+
+    visited = []
 
     while open:
         n = open.pop(0)
+        visited.append(n)
         for ret in goal:
             if ret.strip() == n.name:
                 return visited, n.path, n.cost
-
-        closed.append(n)
         for m in succ[n.name]:
-            pass
+            new_path = [*n.path, m[0]]
+            new_node = Node(m[0], float(m[1]) + n.cost, n, new_path, float(m[1]) + n.cost + float(h[m[0]]))
+            open.append(new_node)
+
+        open.sort(key=lambda tup: (float(tup.heuristic_value), tup.name))
+
+    return None, None, None
 
 
 def check_consistent(state_dict, heuristic):
@@ -187,7 +194,10 @@ if __name__ == '__main__':
 
         else:
             heuristic = sys.argv[sys.argv.index('--h') + 1]
-            visited, path, cost = None, None, None
+            heuristic_list = read_heuristic(state_dict, heuristic)
+            visited, path, cost = astar(s0, state_dict, goal, heuristic_list)
+            visited = set(node_serializer(visited))
+            n = True
 
         if n:
             print('[FOUND_SOLUTION]:', 'yes')
@@ -209,5 +219,5 @@ if __name__ == '__main__':
             check_consistent(state_dict, heuristic_list)
 
         elif '--check-optimistic':
-            print("# HEURISTIC-CONSISTENT", heuristic)
+            print("# HEURISTIC-OPTIMISTIC", heuristic)
             check_optimistic(state_dict, heuristic_list, goal)
